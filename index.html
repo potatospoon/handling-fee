@@ -3,71 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>曜石黑財富儀表板 - 期滿結算版</title>
+    <title>手續費試算表</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* 全域樣式優化 */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; } 
-        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background: #0B0F19; color: #E2E8F0; margin: 0; padding: 20px 15px; }
-        .card { background: #161E2E; padding: 30px 20px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); max-width: 500px; margin: 0 auto; border: 1px solid #2D3748; }
+        body { 
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; 
+            background: #0B0F19; 
+            color: #E2E8F0; 
+            margin: 0; 
+            padding: 20px 10px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        /* 響應式卡片設計 */
+        .card { 
+            background: #161E2E; 
+            padding: 30px 20px; 
+            border-radius: 24px; 
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); 
+            width: 100%;
+            max-width: 800px; /* 電腦版適中寬度 */
+            margin: 0 auto; 
+            border: 1px solid #2D3748; 
+        }
         
-        h2 { text-align: center; color: #F8FAFC; font-weight: 900; margin-top: 0; font-size: 1.6em; margin-bottom: 5px; letter-spacing: 1px; }
-        .subtitle { text-align: center; font-size: 0.9em; color: #94A3B8; margin-bottom: 25px; }
+        h2 { text-align: center; color: #F8FAFC; font-weight: 900; margin-top: 0; font-size: 1.8em; margin-bottom: 5px; letter-spacing: 1px; }
+        .subtitle { text-align: center; font-size: 0.95em; color: #94A3B8; margin-bottom: 30px; }
 
-        .type-selector { display: flex; gap: 12px; margin-bottom: 15px; }
-        .type-btn { flex: 1; padding: 15px 10px; text-align: center; border: 2px solid #2D3748; border-radius: 14px; font-weight: bold; color: #94A3B8; cursor: pointer; transition: 0.3s; background: #1E293B; }
-        .type-btn.active { border-color: #D4AF37; background: rgba(212, 175, 55, 0.1); color: #D4AF37; box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); }
+        /* 方案選擇器 */
+        .type-selector { display: flex; gap: 12px; margin-bottom: 20px; }
+        .type-btn { flex: 1; padding: 18px 10px; text-align: center; border: 2px solid #2D3748; border-radius: 16px; font-weight: bold; color: #94A3B8; cursor: pointer; transition: 0.3s; background: #1E293B; }
+        .type-btn.active { border-color: #D4AF37; background: rgba(212, 175, 55, 0.1); color: #D4AF37; box-shadow: 0 0 20px rgba(212, 175, 55, 0.15); }
 
-        .withdraw-box { display: none; background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 10px; margin-bottom: 20px; border: 1px dashed #7F1D1D; font-size: 0.9em; font-weight: bold; color: #FCA5A5; text-align: center; }
-        .withdraw-box label { cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;}
-        .withdraw-box input { width: 18px; height: 18px; accent-color: #EF4444; }
+        .withdraw-box { display: none; background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 12px; margin-bottom: 25px; border: 1px dashed #7F1D1D; font-size: 0.95em; font-weight: bold; color: #FCA5A5; text-align: center; }
+        .withdraw-box label { cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;}
+        .withdraw-box input { width: 20px; height: 20px; accent-color: #EF4444; }
 
-        .slider-box { margin-bottom: 15px; padding: 18px; background: #1E293B; border: 1px solid #2D3748; border-radius: 14px; }
+        /* 滑桿區佈局 */
+        .slider-group {
+            display: grid;
+            grid-template-columns: 1fr; /* 預設手機一列 */
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        /* 當螢幕寬度大於 600px (平板/電腦)，滑桿可以並排或加寬 */
+        @media (min-width: 600px) {
+            .slider-group { grid-template-columns: 1fr 1fr; }
+            .slider-box:last-child { grid-column: span 2; }
+        }
+
+        .slider-box { padding: 20px; background: #1E293B; border: 1px solid #2D3748; border-radius: 16px; }
         .label-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 0.95em; align-items: center; color: #CBD5E1; }
-        .val { color: #121212; background: #D4AF37; padding: 4px 12px; border-radius: 6px; font-family: 'Roboto Mono', monospace; font-size: 1.1em; font-weight: 900;}
+        .val { color: #121212; background: #D4AF37; padding: 4px 12px; border-radius: 8px; font-family: 'Roboto Mono', monospace; font-size: 1.1em; font-weight: 900;}
         input[type=range] { width: 100%; margin-top: 15px; accent-color: #D4AF37; cursor: pointer; height: 6px; background: #334155; border-radius: 3px; outline: none; }
 
-        .chart-container { position: relative; height: 240px; width: 100%; margin: 30px 0; }
+        .chart-container { position: relative; height: 280px; width: 100%; margin: 35px 0; }
         
-        .result-box { margin-top: 20px; text-align: center; }
-        .highlight-text { font-size: 1.1em; line-height: 1.6; color: #E2E8F0; padding: 20px; background: #1E293B; border-radius: 16px; border: 1px solid #334155; }
-        .alert-text { color: #FCA5A5; font-weight: 900; font-size: 1.2em; display: block; margin-top: 10px; }
-        .success-text { color: #D4AF37; font-weight: 900; font-size: 1.3em; display: block; margin-top: 10px; text-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
+        /* 數據卡片響應式 */
+        .stats-row { 
+            display: grid; 
+            grid-template-columns: 1fr; /* 手機版預設垂直排列 */
+            gap: 12px; 
+            margin-top: 25px; 
+        }
 
-        .stats-row { display: flex; justify-content: space-between; margin-top: 20px; gap: 10px; }
-        .stat-card { flex: 1; background: #0F172A; padding: 15px 10px; border-radius: 14px; text-align: center; border: 1px solid #1E293B; }
-        .stat-title { font-size: 0.8em; color: #94A3B8; margin-bottom: 8px; font-weight: bold; letter-spacing: 0.5px;}
-        .stat-val { font-size: 1.2em; font-weight: 900; color: #F8FAFC; font-family: 'Roboto Mono', monospace; }
+        @media (min-width: 480px) {
+            .stats-row { grid-template-columns: 1fr 1fr 1fr; } /* 平板電腦版橫排 */
+        }
+
+        .stat-card { background: #0F172A; padding: 20px 10px; border-radius: 16px; text-align: center; border: 1px solid #1E293B; transition: 0.3s; }
+        .stat-card:hover { border-color: #334155; transform: translateY(-3px); }
+        .stat-title { font-size: 0.85em; color: #94A3B8; margin-bottom: 10px; font-weight: bold; letter-spacing: 0.5px;}
+        .stat-val { font-size: 1.3em; font-weight: 900; color: #F8FAFC; font-family: 'Roboto Mono', monospace; }
+
+        .result-box { margin-top: 25px; text-align: center; }
+        .highlight-text { font-size: 1.15em; line-height: 1.7; color: #E2E8F0; padding: 25px; background: #1E293B; border-radius: 20px; border: 1px solid #334155; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2); }
+        .alert-text { color: #FCA5A5; font-weight: 900; font-size: 1.25em; display: block; margin-top: 12px; }
+        .success-text { color: #D4AF37; font-weight: 900; font-size: 1.4em; display: block; margin-top: 12px; text-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2>手續費試算表</h2>
-    <div class="subtitle">期滿總結算：看見時間與選擇的威力</div>
+    <div class="subtitle">期滿總結算：時間與選擇的威力</div>
 
     <div class="type-selector">
-        <div class="type-btn active" onclick="selectType('G')" id="btn-G">GSVUL (G型)<br><span style="font-size: 0.8em; font-weight: normal; color: inherit;">滿期全額返還</span></div>
-        <div class="type-btn" onclick="selectType('T')" id="btn-T">TSVUL (T型)<br><span style="font-size: 0.8em; font-weight: normal; color: inherit;">靈活彈性提領</span></div>
+        <div class="type-btn active" onclick="selectType('G')" id="btn-G">GSVUL (G型)<br><span style="font-size: 0.85em; font-weight: normal;">滿期全額返還</span></div>
+        <div class="type-btn" onclick="selectType('T')" id="btn-T">TSVUL (T型)<br><span style="font-size: 0.85em; font-weight: normal;">靈活彈性提領</span></div>
     </div>
 
     <div class="withdraw-box" id="withdraw-container">
         <label>
             <input type="checkbox" id="has-withdraw" onchange="calculate()">
-            ⚠️ 期間內是否會中途提領？(提領將取消返還)
+            ⚠️ 期間內是否有中途提領？(將取消返還)
         </label>
     </div>
 
-    <div class="slider-box">
-        <div class="label-row"><span>每月投入金額</span><span id="v_save" class="val">10000</span></div>
-        <input type="range" id="i_save" min="3000" max="100000" step="1000" value="10000" oninput="calculate()">
-    </div>
-    <div class="slider-box">
-        <div class="label-row"><span>預計放幾年？</span><span id="v_years" class="val">20</span></div>
-        <input type="range" id="i_years" min="1" max="40" step="1" value="20" oninput="calculate()">
-    </div>
-    <div class="slider-box">
-        <div class="label-row"><span>預期年化報酬率 (%)</span><span id="v_roi" class="val">8</span></div>
-        <input type="range" id="i_roi" min="1" max="15" step="1" value="8" oninput="calculate()">
+    <div class="slider-group">
+        <div class="slider-box">
+            <div class="label-row"><span>每月投入金額</span><span id="v_save" class="val">10000</span></div>
+            <input type="range" id="i_save" min="3000" max="100000" step="1000" value="10000" oninput="calculate()">
+        </div>
+        <div class="slider-box">
+            <div class="label-row"><span>預期報酬率 (%)</span><span id="v_roi" class="val">8</span></div>
+            <input type="range" id="i_roi" min="1" max="15" step="1" value="8" oninput="calculate()">
+        </div>
+        <div class="slider-box">
+            <div class="label-row"><span>預計放幾年？</span><span id="v_years" class="val">20</span></div>
+            <input type="range" id="i_years" min="1" max="40" step="1" value="20" oninput="calculate()">
+        </div>
     </div>
 
     <div class="chart-container">
@@ -107,6 +158,7 @@
         calculate();
     }
 
+    // 初始化啟動
     selectType('G');
 
     function calculate() {
@@ -124,10 +176,8 @@
         let totalFeePaid = 0;
         let feeReturned = 0;
 
-        // 核心精算迴圈 (精準首年保費比例)
         for (let i = 1; i <= years; i++) {
             let feeThisYear = 0;
-            
             if (currentType === 'G') {
                 if(i === 1) feeThisYear = 0.60 * annualSave;
                 else if(i === 2) feeThisYear = 0.45 * annualSave;
@@ -142,7 +192,6 @@
             totalFeePaid += feeThisYear;
             accountValue = (accountValue + annualSave - feeThisYear) * (1 + roi);
 
-            // 第七年一刀切直接返還，參與後續複利
             if (i === 7) {
                 if (currentType === 'G' && !hasWithdraw) {
                     feeReturned = 1.50 * annualSave; 
@@ -158,49 +207,42 @@
         let unreturnedFee = Math.max(0, totalFeePaid - feeReturned);
         let pureProfit = Math.max(0, accountValue - totalPrincipal);
 
-        if (pureProfit < 0) pureProfit = 0;
-
         document.getElementById('t_principal').innerText = totalPrincipal.toLocaleString();
         document.getElementById('t_profit').innerText = Math.round(pureProfit).toLocaleString();
         document.getElementById('t_fee').innerText = unreturnedFee.toLocaleString();
 
         let conclusionHtml = "";
         if (years < 7) {
-            conclusionHtml = `目前未滿七年，尚未觸發私行級的<b>「加值金返還機制」</b>。<br>將時間拉長，您將見證建置成本被徹底粉碎的瞬間。`;
+            conclusionHtml = `目前未滿七年，尚未觸發<b>「加值金返還機制」</b>。<br>將時間拉長，您將見證建置成本被徹底粉碎的瞬間。`;
         } else {
             let totalWealth = totalPrincipal + pureProfit + unreturnedFee; 
             let feePercentage = ((unreturnedFee / totalWealth) * 100).toFixed(1);
-            
             if (unreturnedFee === 0) {
-                conclusionHtml = `第七年公司已將 <b>${feeReturned.toLocaleString()} 元</b> 手續費陸續退還。<br>
+                conclusionHtml = `第七年公司已將 <b>${feeReturned.toLocaleString()} 元</b> 手續費全數退還。<br>
                                   <span class="success-text">✦ 您的帳戶建置成本為 0% ✦</span>
-                                  這座提款機為您創造的所有獲利，完完全全屬於您自己！`;
+                                  獲利完完全全屬於您自己！`;
             } else {
-                conclusionHtml = `您用 <b>${unreturnedFee.toLocaleString()} 元</b> 的建置成本，撬動了 <b style="color:#D4AF37;">${Math.round(pureProfit).toLocaleString()} 元</b> 的驚人財富！<br>
+                conclusionHtml = `您用 <b>${unreturnedFee.toLocaleString()} 元</b> 的建置成本，撬動了 <b style="color:#D4AF37;">${Math.round(pureProfit).toLocaleString()} 元</b> 的財富！<br>
                                   <span class="alert-text">手續費僅佔期滿總財富的 ${feePercentage}%</span>
-                                  用極小的費用，換到大筆的資產。`;
+                                  微小的過路費，換取直達財務自由的門票。`;
             }
         }
         document.getElementById('conclusion-text').innerHTML = conclusionHtml;
-
         renderChart(totalPrincipal, Math.round(pureProfit), unreturnedFee);
     }
 
     function renderChart(principal, profit, fee) {
         const ctx = document.getElementById('doughnutChart').getContext('2d');
         if (chartObj) chartObj.destroy();
-        
-        const displayProfit = profit > 0 ? profit : 0.1;
-        
         chartObj = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: ['總投入本金', '純獲利 (複利)', '未返還手續費'],
                 datasets: [{
-                    data: [principal, displayProfit, fee],
+                    data: [principal, profit > 0 ? profit : 0.1, fee],
                     backgroundColor: ['#475569', '#D4AF37', '#991B1B'],
                     borderWidth: 0,
-                    hoverOffset: 4
+                    hoverOffset: 10
                 }]
             },
             options: {
@@ -208,20 +250,11 @@
                 maintainAspectRatio: false,
                 cutout: '75%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { color: '#94A3B8', padding: 20, font: { size: 12, family: "'PingFang TC', sans-serif" } } },
+                    legend: { position: 'bottom', labels: { color: '#94A3B8', padding: 25, font: { size: 13 } } },
                     tooltip: {
-                        backgroundColor: '#1E293B', titleColor: '#F8FAFC', bodyColor: '#D4AF37', borderColor: '#334155', borderWidth: 1, padding: 12,
+                        backgroundColor: '#1E293B', titleColor: '#F8FAFC', bodyColor: '#D4AF37', padding: 15,
                         callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                if (label) label += ': ';
-                                if (context.raw !== 0.1) {
-                                    label += Math.round(context.raw).toLocaleString() + ' 元';
-                                } else {
-                                    label += '0 元';
-                                }
-                                return label;
-                            }
+                            label: (ctx) => `${ctx.label}: ${Math.round(ctx.raw).toLocaleString()} 元`
                         }
                     }
                 }
